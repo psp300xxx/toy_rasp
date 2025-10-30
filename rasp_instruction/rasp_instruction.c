@@ -146,6 +146,16 @@ void rasp_jump_if_not_zero(int typeOfOperand, int operand, RASP_CONTEXT * contex
     context->program_counter ++;
 }
 
+int is_jump_opcode(int opcode){
+    return ( opcode == RASP_JUMP ||
+             opcode == RASP_JUMP_IF_ZERO ||
+             opcode == RASP_JUMP_IF_NOT_ZERO ||
+             opcode == RASP_JUMP_IF_GREATER ||
+             opcode == RASP_JUMP_IF_GREATER_OR_EQUALS ||
+             opcode == RASP_JUMP_IF_LESS ||
+             opcode == RASP_JUMP_IF_LESS_OR_EQUALS );
+}
+
 void rasp_jump_if_greater_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context){
     if( context->accumulator >= 0 ){
         context->program_counter = operand;
@@ -198,7 +208,7 @@ RASP_INSTRUCTION * parse_rasp_instruction( char * line ){
         sscanf(line, "%63s %63s", instruction, operand);
     }
     RASP_INSTRUCTION * rasp_instruction = (RASP_INSTRUCTION *) safe_malloc( sizeof(RASP_INSTRUCTION) );
-    rasp_instruction->label = label;
+    copy_label_if_non_empty(rasp_instruction, label);
     rasp_instruction->opcode = get_opcode_from_string( instruction );
     if( rasp_instruction->opcode == -1 ){
         free( rasp_instruction );
@@ -206,8 +216,17 @@ RASP_INSTRUCTION * parse_rasp_instruction( char * line ){
         exit(1); // Invalid instruction
     }
     rasp_instruction->typeOfOperand = get_type_of_operand_from_string( operand );
-    rasp_instruction->operand = get_operand_from_string( operand );
+    set_operand_from_string( rasp_instruction, rasp_instruction->opcode, operand );
     return rasp_instruction;
+}
+
+void copy_label_if_non_empty(RASP_INSTRUCTION * rasp_instruction, char * label) {
+    if (strlen(label) > 0) {
+        rasp_instruction->label = (char *) safe_malloc(strlen(label) + 1);
+        strcpy(rasp_instruction->label, label);
+    } else {
+        rasp_instruction->label = NULL;
+    }
 }
 
 int get_opcode_from_string( char * instruction_str ){
@@ -240,11 +259,16 @@ int get_type_of_operand_from_string( char * operand_str ){
     }
 }
 
-int get_operand_from_string( char * operand_str ){
+void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str ){
+    if( is_jump_opcode(opcode) ) {
+        rasp_instruction->targetLabel = (char *) safe_malloc(strlen(operand_str) + 1);
+        strcpy(rasp_instruction->targetLabel, operand_str);
+        return;
+    }
     if( operand_str[0] == '#' || operand_str[0] == '@' ){
-        return atoi( &operand_str[1] );
+        rasp_instruction->operand = atoi( &operand_str[1] );
     } else {
-        return atoi( operand_str );
+        rasp_instruction->operand = atoi( operand_str );
     }
 }
 

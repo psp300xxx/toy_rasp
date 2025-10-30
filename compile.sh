@@ -1,1 +1,1 @@
-gcc -o toy_rasp main.c hashtable/hashtable.c malloc_utils/malloc_utils.c rasp_executor/rasp_context.c rasp_instruction/rasp_instruction.c rasp_program/rasp_program.c -Wall -Wextra -std=c11
+gcc -g -O0 -o toy_rasp main.c hashtable/hashtable.c malloc_utils/malloc_utils.c rasp_executor/rasp_context.c rasp_instruction/rasp_instruction.c rasp_program/rasp_program.c -Wall -Wextra -std=c11

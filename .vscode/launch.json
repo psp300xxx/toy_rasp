@@ -28,7 +28,7 @@
             "args": [
                 "${workspaceFolder}/Test.rasp"
             ],
-            "stopOnEntry": false,
+            "stopOnEntry": true,
             "cwd": "${workspaceFolder}",
             "terminal": "integrated",
             "env": {}

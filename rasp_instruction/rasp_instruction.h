@@ -58,11 +58,14 @@ void rasp_halt(int typeOfOperand, int operand, RASP_CONTEXT * context);
    rasp_instruction.c to avoid multiple-definition/linker errors. */
 extern void (*RASP_FUNCTIONS[])(int typeOfOperand, int operand, RASP_CONTEXT * context);
 
+int is_jump_opcode(int opcode);
+
 typedef struct {
     int opcode;
     int typeOfOperand;
     int operand;
     char * label;
+    char * targetLabel;
 } RASP_INSTRUCTION;
 
 typedef struct {
@@ -75,9 +78,11 @@ RASP_INSTRUCTION * parse_rasp_instruction( char * line );
 
 int get_opcode_from_string( char * instruction_str );
 
+void copy_label_if_non_empty(RASP_INSTRUCTION * rasp_instruction, char * label);
+
 int get_type_of_operand_from_string( char * operand_str );
 
-int get_operand_from_string( char * operand_str );
+void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str );
 
 unsigned int rasp_instruction_label_hash( char * label );
 

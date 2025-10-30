@@ -69,6 +69,20 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
             put( label_hash, (void *)(long)i, program->labels );
         }
     }
+    for(int i=0; i<program->instruction_count; i++){
+        RASP_INSTRUCTION * instr = &program->instructions[i];
+        if( is_jump_opcode( instr->opcode ) ){
+            unsigned int label_hash = rasp_instruction_label_hash( instr->targetLabel );
+            void * label_address = get( label_hash, program->labels );
+            if( label_address == NULL ){
+                ERR_PROGRAM_NOT_CREATED = 1;
+                fprintf( stderr, "error: label not found for instruction at index %d\n", i );
+                goto finally;
+            }
+            instr->operand = (int)(long) label_address;
+        }
+    }
+    // exit(0);
     finally:
         if(ERR_PROGRAM_NOT_CREATED && program!=NULL){
             // free program
