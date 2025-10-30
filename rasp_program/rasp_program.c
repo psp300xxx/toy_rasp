@@ -41,6 +41,7 @@ void add_instruction_to_rasp_program( RASP_INSTRUCTION * instruction, RASP_PROGR
 RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     FILE * file = fopen( filepath, "r" );
     int ERR_PROGRAM_NOT_CREATED = 0;
+    char * line = NULL;
     if( file==NULL ){
         fprintf( stderr, "error opening file %s\n", filepath );
         ERR_PROGRAM_NOT_CREATED = 1;
@@ -49,7 +50,6 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     int expected_instruction_count = 128;
     RASP_PROGRAM * program = create_rasp_program_skeleton( expected_instruction_count );
     size_t max_line_length = 0;
-    char * line = NULL;
     ssize_t read;
     while ((read = getline(&line, &max_line_length, file)) != -1) {
         RASP_INSTRUCTION * instruction = parse_rasp_instruction( line );

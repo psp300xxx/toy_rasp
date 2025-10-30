@@ -22,6 +22,8 @@ typedef enum {
     RASP_ADD,
     RASP_SUB,
     RASP_MUL,
+    RASP_MOD,
+    RASP_INC,
     RASP_DIV,
     RASP_JUMP,
     RASP_JUMP_IF_ZERO,
@@ -43,6 +45,8 @@ void rasp_store(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_add(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_sub(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_mul(int typeOfOperand, int operand, RASP_CONTEXT * context);
+void rasp_mod(int typeOfOperand, int operand, RASP_CONTEXT * context);
+void rasp_inc(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_div(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump_if_zero(int typeOfOperand, int operand, RASP_CONTEXT * context);
@@ -69,7 +73,7 @@ typedef struct {
 } RASP_INSTRUCTION;
 
 typedef struct {
-    int should_halt:1;
+    unsigned int should_halt:1;
 } RASP_INSTRUCTION_RESULT;
 
 void execute_rasp_instruction( RASP_INSTRUCTION * instruction, RASP_CONTEXT * context, RASP_INSTRUCTION_RESULT * result );
@@ -85,5 +89,7 @@ int get_type_of_operand_from_string( char * operand_str );
 void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str );
 
 unsigned int rasp_instruction_label_hash( char * label );
+
+void increase_program_counter(RASP_CONTEXT * context);
 
 #endif /* RASP_INSTRUCTION_H */

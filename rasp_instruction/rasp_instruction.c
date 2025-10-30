@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define UNUSED(x) (void)(x)
+
+
 /* Define the function pointer table in the implementation file to avoid
    multiple-definition linker errors. The header contains an extern
    declaration for this symbol. */
@@ -16,6 +19,8 @@ void (*RASP_FUNCTIONS[RASP_HALT + 1])(int typeOfOperand, int operand, RASP_CONTE
     rasp_add,
     rasp_sub,
     rasp_mul,
+    rasp_mod,
+    rasp_inc,
     rasp_div,
     rasp_jump,
     rasp_jump_if_zero,
@@ -29,6 +34,7 @@ void (*RASP_FUNCTIONS[RASP_HALT + 1])(int typeOfOperand, int operand, RASP_CONTE
 };
 
 void rasp_jump(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     context->program_counter = operand;
 }
 
@@ -44,12 +50,13 @@ void rasp_load(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator = context->registers[ context->registers[ operand ] ];
             break;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_store(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     context->registers[ operand ] = context->accumulator;
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_add(int typeOfOperand, int operand, RASP_CONTEXT * context){
@@ -64,7 +71,7 @@ void rasp_add(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator += context->registers[ context->registers[ operand ] ];
             break;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_sub(int typeOfOperand, int operand, RASP_CONTEXT * context){
@@ -79,7 +86,34 @@ void rasp_sub(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator -= context->registers[ context->registers[ operand ] ];
             break;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
+}
+
+void rasp_mod(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    switch( typeOfOperand ){
+        case RASP_OPERAND_FROM_REGISTER:
+            context->accumulator %= context->registers[ operand ];
+            break;
+        case RASP_OPERAND_FROM_RAW_VALUE:
+            context->accumulator %= operand;
+            break;
+        case RASP_OPERAND_FROM_REGISTER_REFERENCE:
+            context->accumulator %= context->registers[ context->registers[ operand ] ];
+            break;
+    }
+    increase_program_counter( context );
+}
+
+void rasp_inc(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    switch( typeOfOperand ){
+        case RASP_OPERAND_FROM_REGISTER:
+            context->registers[ operand ]++;
+            break;
+        default:
+            context->accumulator++;
+            break;
+    }
+    increase_program_counter( context );
 }
 
 void rasp_mul(int typeOfOperand, int operand, RASP_CONTEXT * context){
@@ -94,7 +128,7 @@ void rasp_mul(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator *= context->registers[ context->registers[ operand ] ];
             break;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_div(int typeOfOperand, int operand, RASP_CONTEXT * context){
@@ -109,14 +143,17 @@ void rasp_div(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator /= context->registers[ context->registers[ operand ] ];
             break;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_noop(int typeOfOperand, int operand, RASP_CONTEXT * context){
-    context->program_counter ++;
+    UNUSED(typeOfOperand);
+    UNUSED(operand);
+    increase_program_counter( context );
 }   
 
 void rasp_jump_if_zero(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator == 0 ){
         context->program_counter = operand;
         return;
@@ -125,12 +162,15 @@ void rasp_jump_if_zero(int typeOfOperand, int operand, RASP_CONTEXT * context){
 }
 
 void rasp_halt(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
+    UNUSED(operand);
     context->last_instruction_result->should_halt = 1;
     printf("HALT encountered. Stopping execution.\n");
     exit(0);
 }
 
 void rasp_jump_if_greater(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator > 0 ){
         context->program_counter = operand;
         return;
@@ -139,6 +179,7 @@ void rasp_jump_if_greater(int typeOfOperand, int operand, RASP_CONTEXT * context
 }
 
 void rasp_jump_if_not_zero(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator != 0 ){
         context->program_counter = operand;
         return;
@@ -156,38 +197,51 @@ int is_jump_opcode(int opcode){
              opcode == RASP_JUMP_IF_LESS_OR_EQUALS );
 }
 
+void increase_program_counter(RASP_CONTEXT * context){
+    context->program_counter ++;
+    if( context->program_counter >= context->program->instruction_count ){
+        context->last_instruction_result->should_halt = 1;
+    }
+}
+
 void rasp_jump_if_greater_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator >= 0 ){
         context->program_counter = operand;
         return;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void execute_rasp_instruction( RASP_INSTRUCTION * instruction, RASP_CONTEXT * context, RASP_INSTRUCTION_RESULT * result ){
     int opcode = instruction->opcode;
     RASP_FUNCTIONS[ opcode ]( instruction->typeOfOperand, instruction->operand, context ); 
+    result->should_halt = context->last_instruction_result->should_halt;
 }
 
 void rasp_jump_if_less(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator < 0 ){
         context->program_counter = operand;
         return;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_jump_if_less_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
     if( context->accumulator <= 0 ){
         context->program_counter = operand;
         return;
     }
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 void rasp_print(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
+    UNUSED(operand);
     printf("%d\n", context->accumulator);
-    context->program_counter ++;
+    increase_program_counter( context );
 }
 
 
@@ -236,6 +290,8 @@ int get_opcode_from_string( char * instruction_str ){
     if( strcmp(instruction_str, "ADD")==0 ) return RASP_ADD;
     if( strcmp(instruction_str, "SUB")==0 ) return RASP_SUB;
     if( strcmp(instruction_str, "MUL")==0 ) return RASP_MUL;
+    if( strcmp(instruction_str, "MOD")==0 ) return RASP_MOD;
+    if( strcmp(instruction_str, "INC")==0 ) return RASP_INC;
     if( strcmp(instruction_str, "DIV")==0 ) return RASP_DIV;
     if( strcmp(instruction_str, "JUMP")==0 ) return RASP_JUMP;
     if( strcmp(instruction_str, "JZ")==0 ) return RASP_JUMP_IF_ZERO;
