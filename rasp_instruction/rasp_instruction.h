@@ -25,6 +25,7 @@ typedef enum {
     RASP_MOD,
     RASP_INC,
     RASP_DIV,
+    RASP_PRINT_REG,
     RASP_JUMP,
     RASP_JUMP_IF_ZERO,
     RASP_JUMP_IF_NOT_ZERO,
@@ -48,6 +49,7 @@ void rasp_mul(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_mod(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_inc(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_div(int typeOfOperand, int operand, RASP_CONTEXT * context);
+void rasp_print_reg(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump_if_zero(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump_if_not_zero(int typeOfOperand, int operand, RASP_CONTEXT * context);

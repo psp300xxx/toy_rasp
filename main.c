@@ -17,8 +17,7 @@ int main(int argc, char ** argv){
         return 1;
     }
     RASP_CONTEXT * context = create_rasp_context( program, MAX_REGISTERS );
-    while( context->last_instruction_result->should_halt == 0 ){
-        execute_rasp_instruction( &context->program->instructions[ context->program_counter ], context, context->last_instruction_result );
-    }
+    run_flawless( context, OPTION_MASK(SHOW_ACCUMULATOR) );
+    free_rasp_context( context );
     return 0;          
 }

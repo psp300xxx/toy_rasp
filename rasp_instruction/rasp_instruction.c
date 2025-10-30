@@ -22,6 +22,7 @@ void (*RASP_FUNCTIONS[RASP_HALT + 1])(int typeOfOperand, int operand, RASP_CONTE
     rasp_mod,
     rasp_inc,
     rasp_div,
+    rasp_print_reg,
     rasp_jump,
     rasp_jump_if_zero,
     rasp_jump_if_not_zero,
@@ -50,6 +51,12 @@ void rasp_load(int typeOfOperand, int operand, RASP_CONTEXT * context){
             context->accumulator = context->registers[ context->registers[ operand ] ];
             break;
     }
+    increase_program_counter( context );
+}
+
+void rasp_print_reg(int typeOfOperand, int operand, RASP_CONTEXT * context){
+    UNUSED(typeOfOperand);
+    printf("%d\n", context->registers[ operand ]);
     increase_program_counter( context );
 }
 
@@ -295,6 +302,7 @@ int get_opcode_from_string( char * instruction_str ){
     if( strcmp(instruction_str, "SUB")==0 ) return RASP_SUB;
     if( strcmp(instruction_str, "MUL")==0 ) return RASP_MUL;
     if( strcmp(instruction_str, "MOD")==0 ) return RASP_MOD;
+    if( strcmp(instruction_str, "PRINT_REG")==0 ) return RASP_PRINT_REG;
     if( strcmp(instruction_str, "INC")==0 ) return RASP_INC;
     if( strcmp(instruction_str, "DIV")==0 ) return RASP_DIV;
     if( strcmp(instruction_str, "JUMP")==0 ) return RASP_JUMP;
