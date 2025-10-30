@@ -17,11 +17,11 @@ void * put(int key, void * value, HASHTABLE * table){
     return old_value;
 }
 
-void * get(int key, HASHTABLE * table){
+void * get(unsigned int key, HASHTABLE * table){
     return table->array[ key%ARRAY_LENGTH ];
 }
 
-void * remove(int key, HASHTABLE * table){
+void * remove(unsigned int key, HASHTABLE * table){
     void * old_value = table->array[ key%ARRAY_LENGTH ];
     if( old_value != NULL ){
         table->array[ key%ARRAY_LENGTH ] = NULL;
@@ -34,7 +34,7 @@ int size( HASHTABLE * table ){
     return table->size;
 }
 
-void for_each_key( HASHTABLE * table, void (*func)(int) ){
+void for_each_key( HASHTABLE * table, void (*func)(unsigned int) ){
     for(int i=0; i<ARRAY_LENGTH; i++){
         if( table->array[i] != NULL ){
             func(i);
@@ -42,7 +42,7 @@ void for_each_key( HASHTABLE * table, void (*func)(int) ){
     }
 }
 
-void for_each_entry( HASHTABLE * table, void (*func)(int, void *) ){
+void for_each_entry( HASHTABLE * table, void (*func)(unsigned int, void *) ){
     for(int i=0; i<ARRAY_LENGTH; i++){
         if( table->array[i] != NULL ){
             func(i, table->array[i]);

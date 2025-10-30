@@ -5,7 +5,7 @@
 
 typedef struct {
     void * array [ARRAY_LENGTH];
-    int size = 0;
+    unsigned int size;
 } HASHTABLE;
 
 HASHTABLE * create_table();
@@ -19,10 +19,12 @@ void * put(int key, void * value, HASHTABLE * table);
 
 int size( HASHTABLE * table );
 
-void for_each_key( HASHTABLE * table, void (*func)(int) );
+void for_each_key( HASHTABLE * table, void (*func)(unsigned int) );
 
-void for_each_entry( HASHTABLE * table, void (*func)(int, void *) );
+void for_each_entry( HASHTABLE * table, void (*func)(unsigned int, void *) );
 
-void * get(int key, HASHTABLE * table);
+void * get(unsigned int key, HASHTABLE * table);
 
-void * remove(int key, HASHTABLE * table);
+void * remove(unsigned int key, HASHTABLE * table);
+
+void free_table( HASHTABLE * table );
