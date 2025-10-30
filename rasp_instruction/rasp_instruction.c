@@ -253,8 +253,12 @@ RASP_INSTRUCTION * parse_rasp_instruction( char * line ){
     // Rimuove spazi iniziali
     while (isspace((unsigned char)*line)) line++;
 
-    // Verifica se contiene ':'
-    if (strchr(line, ':')) {
+    if( line[0]== '#' ) {
+        RASP_INSTRUCTION * rasp_instruction = (RASP_INSTRUCTION *) safe_malloc( sizeof(RASP_INSTRUCTION) );
+        rasp_instruction->opcode = RASP_NOOP;
+        return rasp_instruction;
+    }
+    else if (strchr(line, ':')) {
         // LABEL: INSTRUCTION OPERAND
         sscanf(line, "%63[^:]: %63s %63s", label, instruction, operand);
     } else {
