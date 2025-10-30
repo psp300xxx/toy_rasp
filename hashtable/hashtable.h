@@ -1,5 +1,9 @@
+
+#ifndef HASHTABLE_H
+#define HASHTABLE_H
+
 #include <stdlib.h>
-#include "malloc_utils.h"
+#include "../malloc_utils/malloc_utils.h"
 
 #define ARRAY_LENGTH 128000
 
@@ -25,6 +29,8 @@ void for_each_entry( HASHTABLE * table, void (*func)(unsigned int, void *) );
 
 void * get(unsigned int key, HASHTABLE * table);
 
-void * remove(unsigned int key, HASHTABLE * table);
+void * remove_key(unsigned int key, HASHTABLE * table);
 
 void free_table( HASHTABLE * table );
+
+#endif /* HASHTABLE_H */

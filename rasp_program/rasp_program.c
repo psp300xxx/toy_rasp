@@ -1,6 +1,6 @@
 #include "rasp_program.h"
 #include <stdio.h>
-#include "rasp_instruction.h"
+#include "../rasp_instruction/rasp_instruction.h"
 
 RASP_PROGRAM * create_rasp_program( RASP_INSTRUCTION * instructions, HASHTABLE * labels ){
     RASP_PROGRAM * program = (RASP_PROGRAM*) safe_malloc( sizeof(RASP_PROGRAM) );
@@ -9,11 +9,23 @@ RASP_PROGRAM * create_rasp_program( RASP_INSTRUCTION * instructions, HASHTABLE *
     return program;
 }
 
+void free_rasp_program( RASP_PROGRAM * program ){
+    if( program==NULL ) return;
+    if( program->instructions != NULL ){
+        free( program->instructions );
+    }
+    if( program->labels != NULL ){
+        free_table( program->labels );
+    }
+    free( program );
+}
+
 RASP_PROGRAM * create_rasp_program_skeleton( int expected_instruction_number ){
     RASP_PROGRAM * program = (RASP_PROGRAM*) safe_malloc( sizeof(RASP_PROGRAM) );
     program -> instruction_count = 0;
     program->instructions = safe_malloc( sizeof(RASP_INSTRUCTION)*expected_instruction_number );
     program->labels = create_table();
+    program->expected_instruction_count = expected_instruction_number;
     return program;
 }
 
@@ -28,7 +40,6 @@ void add_instruction_to_rasp_program( RASP_INSTRUCTION * instruction, RASP_PROGR
 
 RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     FILE * file = fopen( filepath, "r" );
-    RASP_PROGRAM * program = (RASP_PROGRAM *)safe_malloc( sizeof(RASP_PROGRAM) );
     int ERR_PROGRAM_NOT_CREATED = 0;
     if( file==NULL ){
         fprintf( stderr, "error opening file %s\n", filepath );
@@ -36,10 +47,11 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
         goto finally;
     }
     int expected_instruction_count = 128;
-    int max_line_length = 256;
-    char * line = (char *) safe_malloc( sizeof(char)*max_line_length );
+    RASP_PROGRAM * program = create_rasp_program_skeleton( expected_instruction_count );
+    size_t max_line_length = 0;
+    char * line = NULL;
     ssize_t read;
-    while ((read = getline(line, (size_t *)&max_line_length, file)) != -1) {
+    while ((read = getline(&line, &max_line_length, file)) != -1) {
         RASP_INSTRUCTION * instruction = parse_rasp_instruction( line );
         if (instruction==NULL)
         {
@@ -65,6 +77,9 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
         }
         if(file!=NULL){
             fclose( file );
+        }
+        if(line!=NULL){
+            free(line);
         }
         return program;
 }

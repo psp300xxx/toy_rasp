@@ -21,7 +21,7 @@ void * get(unsigned int key, HASHTABLE * table){
     return table->array[ key%ARRAY_LENGTH ];
 }
 
-void * remove(unsigned int key, HASHTABLE * table){
+void * remove_key(unsigned int key, HASHTABLE * table){
     void * old_value = table->array[ key%ARRAY_LENGTH ];
     if( old_value != NULL ){
         table->array[ key%ARRAY_LENGTH ] = NULL;

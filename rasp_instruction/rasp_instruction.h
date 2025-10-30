@@ -1,4 +1,19 @@
+
+#ifndef RASP_INSTRUCTION_H
+#define RASP_INSTRUCTION_H
+
 #include <stdio.h>
+
+/* Forward declare RASP_CONTEXT to avoid circular includes. The full
+   definition is provided in rasp_context.h and is only required by
+   implementation files. */
+typedef struct RASP_CONTEXT RASP_CONTEXT;
+
+typedef enum {
+    RASP_OPERAND_FROM_REGISTER = (1 << 0),
+    RASP_OPERAND_FROM_RAW_VALUE = (1 << 1),
+    RASP_OPERAND_FROM_REGISTER_REFERENCE = (1 << 2)
+} RASP_OPERAND_TYPE;
 
 typedef enum {
     RASP_NOOP = 0,
@@ -14,11 +29,14 @@ typedef enum {
     RASP_JUMP_IF_GREATER,
     RASP_JUMP_IF_GREATER_OR_EQUALS,
     RASP_JUMP_IF_LESS,
+    RASP_JUMP_IF_LESS_OR_EQUALS,
     RASP_PRINT,
-    RASP_HALT 
+    RASP_HALT
 } RASP_OPCODE;
 
-
+/* Function prototypes for instruction implementations (defined in .c).
+   These only reference RASP_CONTEXT via pointer so the forward
+   declaration above is sufficient here. */
 void rasp_noop(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_load(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_store(int typeOfOperand, int operand, RASP_CONTEXT * context);
@@ -32,29 +50,13 @@ void rasp_jump_if_not_zero(int typeOfOperand, int operand, RASP_CONTEXT * contex
 void rasp_jump_if_greater(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump_if_greater_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_jump_if_less(int typeOfOperand, int operand, RASP_CONTEXT * context);
+void rasp_jump_if_less_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_print(int typeOfOperand, int operand, RASP_CONTEXT * context);
 void rasp_halt(int typeOfOperand, int operand, RASP_CONTEXT * context);
 
-/*
-    RASP_HALT + 1 TO HAVE AN ENTRY FOR EACH OPCODE
-*/
-void (*RASP_FUNCTIONS[RASP_HALT + 1])(int typeOfOperand, int operand, RASP_CONTEXT * context) = {
-    rasp_noop,
-    rasp_load,
-    rasp_store,
-    rasp_add,
-    rasp_sub,
-    rasp_mul,
-    rasp_div,
-    rasp_jump,
-    rasp_jump_if_zero,
-    rasp_jump_if_not_zero,
-    rasp_jump_if_greater,
-    rasp_jump_if_greater_or_equals,
-    rasp_jump_if_less,
-    rasp_print,
-    rasp_halt
-};
+/* The actual array of function pointers is defined in
+   rasp_instruction.c to avoid multiple-definition/linker errors. */
+extern void (*RASP_FUNCTIONS[])(int typeOfOperand, int operand, RASP_CONTEXT * context);
 
 typedef struct {
     int opcode;
@@ -71,4 +73,12 @@ void execute_rasp_instruction( RASP_INSTRUCTION * instruction, RASP_CONTEXT * co
 
 RASP_INSTRUCTION * parse_rasp_instruction( char * line );
 
+int get_opcode_from_string( char * instruction_str );
+
+int get_type_of_operand_from_string( char * operand_str );
+
+int get_operand_from_string( char * operand_str );
+
 unsigned int rasp_instruction_label_hash( char * label );
+
+#endif /* RASP_INSTRUCTION_H */
