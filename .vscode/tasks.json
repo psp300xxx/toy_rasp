@@ -26,8 +26,8 @@
         {
             "label": "build toy_rasp",
             "type": "shell",
-            "command": "sh",
-            "args": ["compile.sh"],
+            "command": "make",
+            "args": ["debug"],
             "group": {
                 "kind": "build",
                 "isDefault": false
