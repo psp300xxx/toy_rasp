@@ -10,10 +10,10 @@
 typedef struct RASP_CONTEXT RASP_CONTEXT;
 
 typedef enum {
-    RASP_OPERAND_FROM_REGISTER = (1 << 0),
-    RASP_OPERAND_FROM_RAW_VALUE = (1 << 1),
-    RASP_OPERAND_FROM_REGISTER_REFERENCE = (1 << 2),
-    RASP_OPERAND_FROM_LABEL = (1 << 3)
+    RASP_OPERAND_FROM_REGISTER = 0,
+    RASP_OPERAND_FROM_RAW_VALUE,
+    RASP_OPERAND_FROM_REGISTER_REFERENCE,
+    RASP_OPERAND_FROM_LABEL
 } RASP_OPERAND_TYPE;
 
 typedef struct {
@@ -82,6 +82,8 @@ extern void (*RASP_FUNCTIONS[])(RASP_INSTRUCTION * instruction, RASP_CONTEXT * c
 
 int is_jump_opcode(int opcode);
 
+void print_instruction( RASP_INSTRUCTION * instruction );
+
 void free_rasp_instruction( RASP_INSTRUCTION * instruction );
 
 void execute_rasp_instruction( RASP_INSTRUCTION * instruction, RASP_CONTEXT * context, RASP_INSTRUCTION_RESULT * result );
@@ -96,7 +98,11 @@ void copy_label_if_non_empty(RASP_INSTRUCTION * rasp_instruction, char * label);
 
 int get_type_of_operand_from_string( char * operand_str );
 
-void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str );
+int get_register_index_from_label( RASP_INSTRUCTION * instruction, RASP_CONTEXT * context );
+
+void fill_rasp_instruction_etiquette(RASP_INSTRUCTION * rasp_instruction, char * operand, char * operand_two);
+
+void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, char * operand_str );
 
 void increase_program_counter(RASP_CONTEXT * context);
 

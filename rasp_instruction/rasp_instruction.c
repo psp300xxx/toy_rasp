@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -40,6 +41,7 @@ void rasp_jump(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
 }
 
 void rasp_load(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
+    int operand;
     switch( instruction->typeOfOperand ){
         case RASP_OPERAND_FROM_REGISTER:
             context->accumulator = context->registers[ instruction->operand ];
@@ -51,7 +53,7 @@ void rasp_load(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             context->accumulator = context->registers[ context->registers[ instruction->operand ] ];
             break;
         case RASP_OPERAND_FROM_LABEL:
-            int operand = get_integerstrkey( instruction->targetLabel, context->etiquettes);
+            operand = get_register_index_from_label( instruction, context );
             context->accumulator = operand;
     }
     increase_program_counter( context );
@@ -67,8 +69,7 @@ void rasp_print_reg(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             printf("%d\n", context->registers[ context->registers[ instruction->operand ] ] );
             break;
         case RASP_OPERAND_FROM_LABEL:
-            printf("%d\n", context->registers[ get_integerstrkey( instruction->targetLabel, context->etiquettes ) ] );
-            increase_program_counter( context );
+            printf("%d\n", context->registers[ get_register_index_from_label( instruction, context ) ] );
     }
     increase_program_counter( context );
 }
@@ -84,11 +85,21 @@ void rasp_store(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             break;
         case RASP_OPERAND_FROM_LABEL:
             {
-                int register_index = get_integerstrkey( instruction->targetLabel, context->etiquettes );
+                int register_index = get_register_index_from_label( instruction, context );
                 context->registers[ register_index ] = context->accumulator;
             }
     }
     increase_program_counter( context );
+}
+
+int get_register_index_from_label(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
+    int result = get_integerstrkey( instruction->targetLabel, context->etiquettes );
+    if(result==INT_MAX){
+        fprintf( stderr, "Error: label %s not found for instruction on line %zu\n", instruction->targetLabel, instruction->lineNumber );
+        context->last_instruction_result->should_halt = 1;
+        return INT_MAX;
+    }
+    return result;
 }
 
 void rasp_etiquette(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
@@ -111,7 +122,7 @@ void rasp_add(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             break;
         case RASP_OPERAND_FROM_LABEL:
             {
-                int source_register = get_integerstrkey( instruction->targetLabel, context->etiquettes );
+                int source_register = get_register_index_from_label( instruction, context );
                 context->accumulator += context->registers[ source_register ];
             }
     }
@@ -133,7 +144,7 @@ void rasp_sub(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             break;
         case RASP_OPERAND_FROM_LABEL:
             {
-                int source_register = get_integerstrkey( instruction->targetLabel, context->etiquettes );
+                int source_register = get_register_index_from_label( instruction, context );
                 context->accumulator -= context->registers[ source_register ];
             }
     }
@@ -155,7 +166,7 @@ void rasp_mod(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             denominator = context->registers[ context->registers[ operand ] ];
             break;
         case RASP_OPERAND_FROM_LABEL:
-            denominator = context-> registers[ get_integerstrkey( instruction->targetLabel, context->etiquettes ) ];
+            denominator = context-> registers[ get_register_index_from_label( instruction, context ) ];
             break;  
     }
     if( denominator == 0 ){
@@ -196,7 +207,7 @@ void rasp_mul(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             break;
         case RASP_OPERAND_FROM_LABEL:
             {
-                int source_register = get_integerstrkey( instruction->targetLabel, context->etiquettes );
+                int source_register = get_register_index_from_label( instruction, context );
                 context->accumulator *= context->registers[ source_register ];
             }
     }
@@ -218,7 +229,7 @@ void rasp_div(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
             denominator = context->registers[ context->registers[ operand ] ];
             break;
         case RASP_OPERAND_FROM_LABEL:
-            denominator = context-> registers[ get_integerstrkey( instruction->targetLabel, context->etiquettes ) ];
+            denominator = context-> registers[ get_register_index_from_label( instruction, context ) ];
             break;
     }
     if( denominator == 0 ){
@@ -231,6 +242,7 @@ void rasp_div(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
 }
 
 void rasp_noop(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
+    UNUSED(instruction);
     increase_program_counter( context );
 }   
 
@@ -244,6 +256,7 @@ void rasp_jump_if_zero(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
 }
 
 void rasp_halt(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
+    UNUSED(instruction);
     context->last_instruction_result->should_halt = 1;
     printf("HALT encountered. Stopping execution.\n");
 }
@@ -317,6 +330,7 @@ void rasp_jump_if_less_or_equals(RASP_INSTRUCTION * instruction, RASP_CONTEXT * 
 }
 
 void rasp_print(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context){
+    UNUSED(instruction);
     printf("%d\n", context->accumulator);
     increase_program_counter( context );
 }
@@ -367,21 +381,40 @@ RASP_INSTRUCTION * parse_rasp_instruction( char * line, int line_number ){
         fprintf( stderr, "Invalid instruction: %s\n", instruction );
         exit(1); // Invalid instruction
     }
-    if( is_etiquette( rasp_instruction->opcode ) ){
-        rasp_instruction->typeOfOperand = RASP_OPERAND_FROM_RAW_VALUE;
-        set_operand_from_string( rasp_instruction, rasp_instruction->opcode, operand );
-        if( strlen( operand_two ) == 0  ){
-            rasp_instruction->label = NULL;
-            fprintf( stderr, "Error: etiquette instruction missing label\n" );
-            return NULL;
-        }
-        rasp_instruction->label = safe_malloc( strlen( operand_two ) + 1 );
-        strcpy( rasp_instruction->label, operand_two );
-        return rasp_instruction;
+    switch (rasp_instruction->opcode){
+        case RASP_NOOP:
+        case RASP_HALT:
+            return rasp_instruction;
+        case RASP_ETIQUETTE:
+            fill_rasp_instruction_etiquette(rasp_instruction, operand, operand_two);
+            return rasp_instruction;
+        default:
+            rasp_instruction->typeOfOperand = get_type_of_operand_from_string( operand );
+            set_operand_from_string( rasp_instruction, operand );
+            return rasp_instruction;
     }
-    rasp_instruction->typeOfOperand = get_type_of_operand_from_string( operand );
-    set_operand_from_string( rasp_instruction, rasp_instruction->opcode, operand );
-    return rasp_instruction;
+}
+
+void print_instruction( RASP_INSTRUCTION * instruction ){
+    printf("Instruction at line %zu: opcode=%d, typeOfOperand=%d, operand=%d, label=%s, targetLabel=%s\n",
+           instruction->lineNumber,
+           instruction->opcode,
+           instruction->typeOfOperand,
+           instruction->operand,
+           instruction->label ? instruction->label : "NULL",
+           instruction->targetLabel ? instruction->targetLabel : "NULL");
+}
+
+void fill_rasp_instruction_etiquette(RASP_INSTRUCTION * rasp_instruction, char * operand, char * operand_two){
+    rasp_instruction->typeOfOperand = RASP_OPERAND_FROM_RAW_VALUE;
+    set_operand_from_string( rasp_instruction, operand );
+    if( strlen( operand_two ) == 0  ){
+        rasp_instruction->label = NULL;
+        fprintf( stderr, "Error: etiquette instruction missing label\n" );
+        return;
+    }
+    rasp_instruction->label = safe_malloc( strlen( operand_two ) + 1 );
+    strcpy( rasp_instruction->label, operand_two );
 }
 
 void copy_label_if_non_empty(RASP_INSTRUCTION * rasp_instruction, char * label) {
@@ -430,20 +463,25 @@ int get_type_of_operand_from_string( char * operand_str ){
     }
 }
 
-void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str ){
+void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, char * operand_str ){
+    int opcode = rasp_instruction->opcode;
     if( is_jump_opcode(opcode) ) {
-        rasp_instruction->targetLabel = (char *) safe_malloc(strlen(operand_str) + 1);
-        strcpy(rasp_instruction->targetLabel, operand_str);
+        /* store target label for jumps; strip a leading '$' if present */
+        const char * src = operand_str;
+        if( operand_str[0] == '$' ) src = operand_str + 1;
+        rasp_instruction->targetLabel = (char *) safe_malloc( strlen(src) + 1 );
+        strcpy( rasp_instruction->targetLabel, src );
         return;
     }
     if( operand_str[0] == '#' || operand_str[0] == '@' ){
         rasp_instruction->operand = atoi( &operand_str[1] );
     }
     else if( operand_str[0] == '$' ){
-        int len = strlen(operand_str);
-        rasp_instruction->targetLabel = safe_malloc(len);
-        rasp_instruction->targetLabel[len] = 0;
-        memcpy(rasp_instruction->targetLabel, operand_str + 1, len-1); // No operand provided
+        /* operand is a label reference like "$label" -> store "label" */
+        const char * src = operand_str + 1;
+        size_t slen = strlen(src);
+        rasp_instruction->targetLabel = safe_malloc( slen + 1 );
+        memcpy(rasp_instruction->targetLabel, src, slen + 1); /* include terminating NUL */
     }
     else {
         rasp_instruction->operand = atoi( operand_str );

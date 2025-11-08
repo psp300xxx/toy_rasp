@@ -3,6 +3,8 @@
 #include "../rasp_instruction/rasp_instruction.h"
 #include <limits.h>
 
+#define UNUSED(x) (void)(x)
+
 RASP_PROGRAM * create_rasp_program( RASP_INSTRUCTION * instructions, HASHTABLE * labels ){
     RASP_PROGRAM * program = (RASP_PROGRAM*) safe_malloc( sizeof(RASP_PROGRAM) );
     program->instructions = instructions;
@@ -98,7 +100,6 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
 }
 
 void write_rasp_program_to_file( RASP_PROGRAM * program, const char * filepath ){
-   /*
-    TODO: implement this function
-   */
+   UNUSED(program);
+   UNUSED(filepath); 
 }
