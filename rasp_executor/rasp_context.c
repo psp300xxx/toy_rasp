@@ -14,6 +14,7 @@ RASP_CONTEXT * create_rasp_context( RASP_PROGRAM * program, int num_registers ){
     context->accumulator = 0;
     context->last_instruction_result = safe_malloc( sizeof(RASP_INSTRUCTION_RESULT) );
     context->last_instruction_result->should_halt = 0;
+    context->etiquettes = create_table();
     return context;
 }
 
@@ -52,6 +53,9 @@ void free_rasp_context( RASP_CONTEXT * context ){
     }
     if( context->last_instruction_result != NULL ){
         free( context->last_instruction_result );
+    }
+    if( context->etiquettes != NULL ){
+        free_table( context->etiquettes );
     }
     free( context );
 }

@@ -1,6 +1,7 @@
 #include "rasp_program.h"
 #include <stdio.h>
 #include "../rasp_instruction/rasp_instruction.h"
+#include <limits.h>
 
 RASP_PROGRAM * create_rasp_program( RASP_INSTRUCTION * instructions, HASHTABLE * labels ){
     RASP_PROGRAM * program = (RASP_PROGRAM*) safe_malloc( sizeof(RASP_PROGRAM) );
@@ -34,13 +35,14 @@ void add_instruction_to_rasp_program( RASP_INSTRUCTION * instruction, RASP_PROGR
     program->instruction_count ++;
     if( program->instruction_count == program ->expected_instruction_count-1 ){
         program->expected_instruction_count *= 2;
-        program->instructions = (RASP_INSTRUCTION *) realloc( program->instructions, sizeof(RASP_INSTRUCTION)*(program->expected_instruction_count) );
+        program->instructions = (RASP_INSTRUCTION *) safe_realloc( program->instructions, sizeof(RASP_INSTRUCTION)*(program->expected_instruction_count) );
     }
 }
 
 RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     FILE * file = fopen( filepath, "r" );
     int ERR_PROGRAM_NOT_CREATED = 0;
+    size_t current_line = 1;
     char * line = NULL;
     if( file==NULL ){
         fprintf( stderr, "error opening file %s\n", filepath );
@@ -52,7 +54,7 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     size_t max_line_length = 0;
     ssize_t read;
     while ((read = getline(&line, &max_line_length, file)) != -1) {
-        RASP_INSTRUCTION * instruction = parse_rasp_instruction( line );
+        RASP_INSTRUCTION * instruction = parse_rasp_instruction( line, current_line++ );
         if (instruction==NULL)
         {
             ERR_PROGRAM_NOT_CREATED = 1;
@@ -65,24 +67,21 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
     for(int i=0; i<program->instruction_count; i++){
         RASP_INSTRUCTION * instr = &program->instructions[i];
         if( instr->label != NULL ){
-            unsigned int label_hash = rasp_instruction_label_hash( instr->label );
-            put( label_hash, (void *)(long)i, program->labels );
+            put_integerstrkey( instr->label, i, program->labels );
         }
     }
     for(int i=0; i<program->instruction_count; i++){
         RASP_INSTRUCTION * instr = &program->instructions[i];
         if( is_jump_opcode( instr->opcode ) ){
-            unsigned int label_hash = rasp_instruction_label_hash( instr->targetLabel );
-            void * label_address = get( label_hash, program->labels );
-            if( label_address == NULL ){
+            int label_address = get_integerstrkey( instr->targetLabel, program->labels );
+            if( label_address == INT_MAX ){
                 ERR_PROGRAM_NOT_CREATED = 1;
                 fprintf( stderr, "error: label not found for instruction at index %d\n", i );
                 goto finally;
             }
-            instr->operand = (int)(long) label_address;
+            instr->operand = label_address;
         }
     }
-    // exit(0);
     finally:
         if(ERR_PROGRAM_NOT_CREATED && program!=NULL){
             // free program
@@ -96,4 +95,10 @@ RASP_PROGRAM * parse_file_to_rasp_program( const char * filepath ){
             free(line);
         }
         return program;
+}
+
+void write_rasp_program_to_file( RASP_PROGRAM * program, const char * filepath ){
+   /*
+    TODO: implement this function
+   */
 }

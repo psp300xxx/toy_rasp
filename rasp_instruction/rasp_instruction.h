@@ -12,12 +12,27 @@ typedef struct RASP_CONTEXT RASP_CONTEXT;
 typedef enum {
     RASP_OPERAND_FROM_REGISTER = (1 << 0),
     RASP_OPERAND_FROM_RAW_VALUE = (1 << 1),
-    RASP_OPERAND_FROM_REGISTER_REFERENCE = (1 << 2)
+    RASP_OPERAND_FROM_REGISTER_REFERENCE = (1 << 2),
+    RASP_OPERAND_FROM_LABEL = (1 << 3)
 } RASP_OPERAND_TYPE;
+
+typedef struct {
+    int opcode;
+    int typeOfOperand;
+    int operand;
+    char * label;
+    char * targetLabel;
+    size_t lineNumber;
+} RASP_INSTRUCTION;
+
+typedef struct {
+    unsigned int should_halt:1;
+} RASP_INSTRUCTION_RESULT;
 
 typedef enum {
     RASP_NOOP = 0,
     RASP_LOAD,
+    RASP_ETIQUETTE,
     RASP_STORE,
     RASP_ADD,
     RASP_SUB,
@@ -40,57 +55,48 @@ typedef enum {
 /* Function prototypes for instruction implementations (defined in .c).
    These only reference RASP_CONTEXT via pointer so the forward
    declaration above is sufficient here. */
-void rasp_noop(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_load(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_store(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_add(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_sub(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_mul(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_mod(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_inc(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_div(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_print_reg(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_zero(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_not_zero(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_greater(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_greater_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_less(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_jump_if_less_or_equals(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_print(int typeOfOperand, int operand, RASP_CONTEXT * context);
-void rasp_halt(int typeOfOperand, int operand, RASP_CONTEXT * context);
+void rasp_noop(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_load(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_etiquette(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_store(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_add(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_sub(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_mul(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_mod(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_inc(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_div(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_print_reg(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_zero(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_not_zero(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_greater(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_greater_or_equals(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_less(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_jump_if_less_or_equals(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_print(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
+void rasp_halt(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
 
 /* The actual array of function pointers is defined in
    rasp_instruction.c to avoid multiple-definition/linker errors. */
-extern void (*RASP_FUNCTIONS[])(int typeOfOperand, int operand, RASP_CONTEXT * context);
+extern void (*RASP_FUNCTIONS[])(RASP_INSTRUCTION * instruction, RASP_CONTEXT * context);
 
 int is_jump_opcode(int opcode);
 
-typedef struct {
-    int opcode;
-    int typeOfOperand;
-    int operand;
-    char * label;
-    char * targetLabel;
-} RASP_INSTRUCTION;
-
-typedef struct {
-    unsigned int should_halt:1;
-} RASP_INSTRUCTION_RESULT;
+void free_rasp_instruction( RASP_INSTRUCTION * instruction );
 
 void execute_rasp_instruction( RASP_INSTRUCTION * instruction, RASP_CONTEXT * context, RASP_INSTRUCTION_RESULT * result );
 
-RASP_INSTRUCTION * parse_rasp_instruction( char * line );
+RASP_INSTRUCTION * parse_rasp_instruction( char * line, int line_number );
 
 int get_opcode_from_string( char * instruction_str );
+
+int is_etiquette(int opcode);
 
 void copy_label_if_non_empty(RASP_INSTRUCTION * rasp_instruction, char * label);
 
 int get_type_of_operand_from_string( char * operand_str );
 
 void set_operand_from_string( RASP_INSTRUCTION * rasp_instruction, int opcode, char * operand_str );
-
-unsigned int rasp_instruction_label_hash( char * label );
 
 void increase_program_counter(RASP_CONTEXT * context);
 

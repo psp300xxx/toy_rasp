@@ -21,4 +21,6 @@ void add_instruction_to_rasp_program( RASP_INSTRUCTION * instruction, RASP_PROGR
 
 void free_rasp_program( RASP_PROGRAM * program );
 
+void write_rasp_program_to_file( RASP_PROGRAM * program, const char * filepath );
+
 #endif /* RASP_PROGRAM_H */

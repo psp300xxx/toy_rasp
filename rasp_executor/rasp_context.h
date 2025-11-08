@@ -11,6 +11,7 @@
 #define OPT_ENABLED(val, bit) ( (( val >> bit ) & 1) == 1 )
 
 #include "../rasp_program/rasp_program.h"
+#include "../hashtable/hashtable.h"
 
 typedef struct RASP_CONTEXT {
     int * registers;
@@ -18,6 +19,7 @@ typedef struct RASP_CONTEXT {
     RASP_PROGRAM * program;
     int program_counter;
     int accumulator;
+    HASHTABLE * etiquettes;
     RASP_INSTRUCTION_RESULT * last_instruction_result;
 } RASP_CONTEXT;
 

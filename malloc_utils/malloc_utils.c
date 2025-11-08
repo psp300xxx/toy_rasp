@@ -10,3 +10,12 @@ void * safe_malloc(size_t bytes){
     }
     return result;
 }
+
+void * safe_realloc(void * ptr, size_t bytes){
+    void * result = realloc(ptr, bytes);
+    if( result==NULL ){
+        fprintf(stderr, "error realloc'ing %zu bytes\n", bytes);
+        exit(1);
+    }
+    return result;
+}
